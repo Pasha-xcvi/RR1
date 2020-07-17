@@ -1,0 +1,78 @@
+---
+title: "RR 1"
+author: "ahmed"
+date: "7/17/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r RR1}
+library(readxl)
+library(ggplot2)
+library(dplyr)
+library(tibble)
+
+activity <- read_excel("activity.xlsx", col_types = c("numeric", "date", "numeric"))
+View(activity)
+StepsPerDay <- aggregate(activity$steps, list(activity$date), FUN=sum)
+colnames(StepsPerDay) <- c("Date", "Steps")
+act <- aggregate(activity$steps, list(activity$date), FUN=sum)
+colnames(act) <- c("Date", "Steps")
+
+H1 <- ggplot(act, aes(Steps))
+H1+geom_histogram(boundary=0, binwidth=3000, col="yellow", fill="red")+ggtitle("Steps/Day")+xlab("Steps")+ylab("Frequency")
+
+mean(act$Steps, na.rm = TRUE)
+median(act$Steps, na.rm = TRUE)
+act2 <- aggregate(steps~interval, data=activity, FUN=mean,na.action = na.omit)
+
+act2$time <- act2$interval/100
+L1 <- ggplot(act2, aes(time, steps))
+L1 + geom_line(col="red")+ggtitle("AVG steps/time")+xlab("Time") + ylab("Steps") 
+table2 <- tbl_df(act2)
+
+table2 %>% select(time, steps) %>% filter(steps==max(table2$steps))
+act3 <- tbl_df(activity)
+act3 %>% filter(is.na(steps)) %>% summarize(mv = n())
+activity$steps_without_na <- ifelse(is.na(activity$steps), round(act2$steps[match(activity$interval, act2$interval)],0), activity$steps)
+act4 <- data.frame(steps=activity$steps_without_na, interval = activity$interval, date = activity$date)
+StepsPerDay_2 <- aggregate(act4$steps, list(act4$date), FUN = sum)
+colnames(StepsPerDay_2) <- c("Date","Steps")
+H2 <- ggplot(StepsPerDay_2, aes(Steps))
+H2 + geom_histogram(boundary=0, binwidth = 3000, col="yellow", fill="red")+ggtitle("Steps/Day")+xlab("Steps")+ylab("Frequency")
+mean(StepsPerDay_2$Steps)
+median(StepsPerDay_2$Steps)
+act4$date2 <- as.Date(act4$date, format = "%Y-%m-%d")
+act4$day <- weekdays(act4$date2)
+act4$day_position <- ifelse(act4$day== 'Friday' | act4$day == 'Saturday', 'weekend', 'weekday')
+act5 <- aggregate(steps~interval+day_position, data=act4, FUN = mean, na.action = na.omit)
+act5$time <- act2$interval/100
+L2 <- ggplot(act5, aes(time, steps))
+L2 + geom_line(col="red")+ggtitle("AVG steps/time: middle of week vs end of week") + xlab("Time") + ylab("Steps")+facet_grid(day_position ~ .)
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=TRUE}
+H1+geom_histogram(boundary=0, binwidth=3000, col="yellow", fill="red")+ggtitle("Steps/Day")+xlab("Steps")+ylab("Frequency")
+
+L1 + geom_line(col="red")+ggtitle("AVG steps/time")+xlab("Time") + ylab("Steps")
+
+H2 + geom_histogram(boundary=0, binwidth = 3000, col="yellow", fill="red")+ggtitle("Steps/Day")+xlab("Steps")+ylab("Frequency")
+
+L2 + geom_line(col="red")+ggtitle("AVG steps/time: middle of week vs end of week") + xlab("Time") + ylab("Steps")+facet_grid(day_position ~ .)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
